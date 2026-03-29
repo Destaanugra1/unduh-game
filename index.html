@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain Adventure — STEM & Literacy Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d1b2a;
+    --navy2: #16213e;
+    --yellow: #FFD166;
+    --cyan: #7EC8E3;
+    --mint: #A8E6CF;
+    --pink: #FF6B9D;
+    --red: #c0392b;
+    --dark: #060d14;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy);
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--yellow);
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    image-rendering: pixelated;
+    clip-path: polygon(0 0, 100% 0, 100% 60%, 60% 60%, 60% 100%, 0 100%);
+    transition: transform 0.1s;
+  }
+
+  /* ── STARS BG ── */
+  .stars {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: white;
+    animation: twinkle var(--dur, 2s) ease-in-out infinite alternate;
+    animation-delay: var(--delay, 0s);
+  }
+  @keyframes twinkle { from{opacity:.1} to{opacity:.9} }
+
+  /* ── PIXEL SCANLINE OVERLAY ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none; z-index: 1000;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 40px;
+    background: rgba(6,13,20,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 2px solid rgba(126,200,227,0.15);
+  }
+  .nav-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px; color: var(--yellow);
+    text-shadow: 2px 2px 0 var(--red);
+    letter-spacing: 1px;
+  }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a {
+    font-family: 'VT323', monospace;
+    font-size: 20px; color: var(--cyan);
+    text-decoration: none; letter-spacing: 1px;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--yellow); }
+  .nav-dl {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px; background: var(--yellow);
+    color: var(--navy); border: none; padding: 8px 14px;
+    cursor: none; text-decoration: none;
+    box-shadow: 3px 3px 0 var(--red);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .nav-dl:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--red); }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+    padding: 100px 20px 60px;
+    text-align: center;
+  }
+
+  .pixel-brain {
+    font-size: 72px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255,209,102,0.5));
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+  .hero-title {
+    font-family: 'Press Start 2P', monospace;
+    line-height: 1.5; margin-top: 20px;
+  }
+  .hero-title .line1 {
+    font-size: clamp(28px, 5vw, 52px);
+    color: var(--yellow);
+    text-shadow: 5px 5px 0 var(--red), 0 0 40px rgba(255,209,102,0.4);
+    display: block; animation: slideUp .8s ease-out both;
+  }
+  .hero-title .line2 {
+    font-size: clamp(28px, 5vw, 52px);
+    color: var(--cyan);
+    text-shadow: 5px 5px 0 #1a5276, 0 0 40px rgba(126,200,227,0.4);
+    display: block; animation: slideUp .8s .2s ease-out both;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  .hero-sub {
+    font-family: 'VT323', monospace;
+    font-size: clamp(18px, 3vw, 26px);
+    color: var(--mint); margin-top: 12px; letter-spacing: 2px;
+    animation: slideUp .8s .4s ease-out both;
+  }
+
+  .hero-desc {
+    font-size: 16px; color: rgba(255,255,255,0.7);
+    max-width: 520px; line-height: 1.8;
+    margin: 24px auto 0;
+    animation: slideUp .8s .5s ease-out both;
+  }
+
+  /* ── DOWNLOAD SECTION ── */
+  .dl-section {
+    margin-top: 48px;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    animation: slideUp .8s .6s ease-out both;
+  }
+
+  .dl-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; color: rgba(255,255,255,0.4);
+    letter-spacing: 2px;
+  }
+
+  .dl-buttons {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  }
+
+  .dl-btn {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; padding: 14px 22px;
+    text-decoration: none; cursor: none;
+    transition: transform .1s, box-shadow .1s;
+    position: relative; overflow: hidden;
+  }
+  .dl-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.1);
+    transform: translateX(-100%);
+    transition: transform .3s;
+  }
+  .dl-btn:hover::before { transform: translateX(0); }
+  .dl-btn:hover { transform: translate(-3px,-3px); }
+
+  .dl-btn.windows {
+    background: var(--cyan); color: var(--navy);
+    box-shadow: 5px 5px 0 #1a5276;
+  }
+  .dl-btn.windows:hover { box-shadow: 8px 8px 0 #1a5276; }
+
+  .dl-btn.android {
+    background: var(--mint); color: var(--navy);
+    box-shadow: 5px 5px 0 #2d6a4f;
+  }
+  .dl-btn.android:hover { box-shadow: 8px 8px 0 #2d6a4f; }
+
+  .dl-btn.itch {
+    background: var(--pink); color: white;
+    box-shadow: 5px 5px 0 #8b1a4a;
+  }
+  .dl-btn.itch:hover { box-shadow: 8px 8px 0 #8b1a4a; }
+
+  .dl-icon { font-size: 20px; }
+
+  .version-badge {
+    font-family: 'VT323', monospace;
+    font-size: 16px; color: rgba(255,255,255,0.3);
+    letter-spacing: 1px;
+  }
+
+  /* ── SCROLL INDICATOR ── */
+  .scroll-hint {
+    margin-top: 60px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    animation: fadeInDown 1s 1.2s ease-out both;
+  }
+  @keyframes fadeInDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+  .scroll-hint span {
+    font-family: 'VT323', monospace; font-size: 16px;
+    color: rgba(255,255,255,0.3); letter-spacing: 2px;
+  }
+  .scroll-arrow {
+    width: 16px; height: 16px;
+    border-right: 3px solid rgba(255,255,255,0.2);
+    border-bottom: 3px solid rgba(255,255,255,0.2);
+    transform: rotate(45deg);
+    animation: bounce 1.5s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:rotate(45deg) translateY(0)} 50%{transform:rotate(45deg) translateY(6px)} }
+
+  /* ── DIVIDER ── */
+  .pixel-divider {
+    height: 4px;
+    background: repeating-linear-gradient(90deg, var(--cyan) 0px, var(--cyan) 8px, transparent 8px, transparent 16px);
+    opacity: 0.3;
+  }
+
+  /* ── SECTION COMMON ── */
+  section { position: relative; z-index: 1; padding: 80px 20px; }
+  .section-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(12px, 2.5vw, 18px);
+    color: var(--yellow);
+    text-shadow: 3px 3px 0 var(--red);
+    text-align: center; margin-bottom: 48px;
+  }
+
+  /* ── FEATURES ── */
+  #features { background: linear-gradient(180deg, var(--navy) 0%, #0a1520 100%); }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px; max-width: 900px; margin: 0 auto;
+  }
+  .feature-card {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(126,200,227,0.2);
+    padding: 28px 22px;
+    transition: border-color .2s, transform .2s, background .2s;
+    position: relative; overflow: hidden;
+  }
+  .feature-card::after {
+    content: ''; position: absolute;
+    bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--cyan); transform: scaleX(0);
+    transition: transform .3s; transform-origin: left;
+  }
+  .feature-card:hover::after { transform: scaleX(1); }
+  .feature-card:hover {
+    border-color: var(--cyan);
+    background: rgba(126,200,227,0.06);
+    transform: translateY(-4px);
+  }
+  .feature-icon { font-size: 36px; margin-bottom: 14px; display: block; }
+  .feature-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; color: var(--cyan); margin-bottom: 10px;
+  }
+  .feature-desc {
+    font-family: 'VT323', monospace;
+    font-size: 18px; color: rgba(255,255,255,0.65); line-height: 1.5;
+  }
+
+  /* ── LEVELS ── */
+  #levels { background: #0a1520; }
+  .levels-row {
+    display: flex; gap: 16px; max-width: 900px;
+    margin: 0 auto; flex-wrap: wrap; justify-content: center;
+  }
+  .level-card {
+    flex: 1; min-width: 180px; max-width: 220px;
+    border: 3px solid var(--border-color, #333);
+    padding: 24px 18px; text-align: center;
+    background: rgba(0,0,0,0.3);
+    position: relative; overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .level-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 0 30px var(--glow, transparent);
+  }
+  .level-card .lv-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px; color: var(--border-color);
+    margin-bottom: 10px;
+  }
+  .level-card .lv-icon { font-size: 40px; margin-bottom: 10px; display: block; }
+  .level-card .lv-name {
+    font-family: 'VT323', monospace;
+    font-size: 22px; color: white; margin-bottom: 6px;
+  }
+  .level-card .lv-badge {
+    display: inline-block;
+    font-family: 'Press Start 2P', monospace; font-size: 7px;
+    padding: 4px 8px; background: var(--border-color);
+    color: var(--navy); margin-top: 8px;
+  }
+  .level-card.locked { opacity: 0.45; }
+  .level-card.locked::after {
+    content: '🔒';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; background: rgba(0,0,0,0.5);
+  }
+
+  /* ── HOW TO PLAY ── */
+  #howto { background: linear-gradient(180deg, #0a1520 0%, var(--navy) 100%); }
+  .steps { display: flex; flex-direction: column; gap: 20px; max-width: 640px; margin: 0 auto; }
+  .step {
+    display: flex; align-items: flex-start; gap: 20px;
+    background: rgba(255,255,255,0.03);
+    border-left: 4px solid var(--cyan);
+    padding: 20px 24px;
+    transition: border-color .2s, background .2s;
+  }
+  .step:hover { border-color: var(--yellow); background: rgba(255,255,255,0.06); }
+  .step-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px; color: var(--yellow); flex-shrink: 0;
+  }
+  .step-text { font-family: 'VT323', monospace; font-size: 20px; color: rgba(255,255,255,0.8); line-height: 1.5; }
+
+  /* ── DOWNLOAD CTA ── */
+  #download {
+    background: linear-gradient(135deg, #060d14 0%, #0d1b2a 100%);
+    text-align: center; padding: 100px 20px;
+    border-top: 2px solid rgba(255,209,102,0.15);
+  }
+  .cta-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(14px, 3vw, 24px);
+    color: var(--yellow); text-shadow: 4px 4px 0 var(--red);
+    margin-bottom: 16px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{text-shadow:4px 4px 0 var(--red)} 50%{text-shadow:4px 4px 0 var(--red), 0 0 40px rgba(255,209,102,0.5)} }
+  .cta-sub {
+    font-family: 'VT323', monospace; font-size: 22px;
+    color: rgba(255,255,255,0.5); margin-bottom: 40px;
+  }
+
+  /* Platform cards */
+  .platform-cards {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    justify-content: center; max-width: 760px; margin: 0 auto 40px;
+  }
+  .platform-card {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.1);
+    padding: 28px 24px; flex: 1; min-width: 180px; max-width: 220px;
+    text-align: center; transition: all .2s;
+  }
+  .platform-card:hover { border-color: var(--yellow); background: rgba(255,209,102,0.05); transform: translateY(-4px); }
+  .platform-card .pc-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+  .platform-card .pc-name {
+    font-family: 'Press Start 2P', monospace; font-size: 8px; color: white; margin-bottom: 6px;
+  }
+  .platform-card .pc-size {
+    font-family: 'VT323', monospace; font-size: 16px; color: rgba(255,255,255,0.4);
+  }
+
+  /* Big DL button */
+  .big-dl {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: 'Press Start 2P', monospace; font-size: 11px;
+    background: var(--yellow); color: var(--navy);
+    padding: 18px 36px; text-decoration: none; cursor: none;
+    box-shadow: 6px 6px 0 var(--red);
+    transition: transform .1s, box-shadow .1s;
+    margin: 0 8px 12px;
+  }
+  .big-dl:hover { transform: translate(-3px,-3px); box-shadow: 9px 9px 0 var(--red); }
+  .big-dl.alt {
+    background: transparent; color: var(--cyan);
+    border: 3px solid var(--cyan); box-shadow: 6px 6px 0 #1a5276;
+  }
+  .big-dl.alt:hover { box-shadow: 9px 9px 0 #1a5276; }
+
+  .note {
+    font-family: 'VT323', monospace; font-size: 17px;
+    color: rgba(255,255,255,0.3); margin-top: 24px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--dark);
+    border-top: 2px solid rgba(255,255,255,0.06);
+    padding: 32px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+    position: relative; z-index: 1;
+  }
+  .footer-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; color: var(--yellow);
+  }
+  .footer-copy {
+    font-family: 'VT323', monospace; font-size: 17px;
+    color: rgba(255,255,255,0.3);
+  }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a {
+    font-family: 'VT323', monospace; font-size: 18px;
+    color: var(--cyan); text-decoration: none;
+  }
+  .footer-links a:hover { color: var(--yellow); }
+
+  /* ── PIXEL CHARACTERS DECO ── */
+  .deco-chars {
+    display: flex; justify-content: center; gap: 20px;
+    margin: 32px 0; flex-wrap: wrap;
+  }
+  .deco-char { font-size: 36px; animation: float var(--dur,3s) ease-in-out infinite; animation-delay: var(--delay,0s); }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:600px) {
+    nav { padding: 12px 20px; }
+    .nav-links { display: none; }
+    .dl-buttons { flex-direction: column; align-items: center; }
+    footer { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+
+<!-- STARS -->
+<div class="stars" id="stars"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">🧠 BRAIN ADV</div>
+  <div class="nav-links">
+    <a href="#features">FITUR</a>
+    <a href="#levels">LEVEL</a>
+    <a href="#howto">CARA MAIN</a>
+    <a href="#download">UNDUH</a>
+  </div>
+  <a href="#download" class="nav-dl">⬇ UNDUH</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="pixel-brain">🧠</div>
+  <h1 class="hero-title">
+    <span class="line1">BRAIN</span>
+    <span class="line2">ADVENTURE</span>
+  </h1>
+  <p class="hero-sub">✦ STEM &amp; LITERACY QUEST ✦</p>
+  <p class="hero-desc">
+    Game edukasi pixel art 2D dimana kamu menjelajahi dunia sambil menjawab tantangan Sains, Matematika, dan Literasi. Belajar sambil bermain!
+  </p>
+
+  <div class="dl-section">
+    <span class="dl-label">— TERSEDIA DI —</span>
+    <div class="dl-buttons">
+      <!-- <a href="#download" class="dl-btn windows">
+        <span class="dl-icon">🖥️</span> WINDOWS
+      </a> -->
+      <a href="#download" class="dl-btn android">
+        <span class="dl-icon">📱</span> ANDROID
+      </a>
+      <!-- <a href="https://itch.io" target="_blank" class="dl-btn itch">
+        <span class="dl-icon">🎮</span> ITCH.IO
+      </a> -->
+    </div>
+    <span class="version-badge">v1.0.0 — GRATIS</span>
+  </div>
+
+  <div class="deco-chars">
+    <span class="deco-char" style="--dur:2.8s;--delay:0s">🧙</span>
+    <span class="deco-char" style="--dur:3.2s;--delay:.4s">🐢</span>
+    <span class="deco-char" style="--dur:2.5s;--delay:.8s">🐰</span>
+    <span class="deco-char" style="--dur:3.5s;--delay:.2s">🦇</span>
+    <span class="deco-char" style="--dur:2.9s;--delay:.6s">📚</span>
+  </div>
+
+  <div class="scroll-hint">
+    <span>SCROLL</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<div class="pixel-divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <h2 class="section-title">— FITUR GAME —</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🗺️</span>
+      <div class="feature-name">JELAJAHI DUNIA</div>
+      <div class="feature-desc">Karakter berjalan menjelajahi 3 dunia berbeda — Hutan, Gua, dan Menara ajaib</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💬</span>
+      <div class="feature-name">TANTANGAN NPC</div>
+      <div class="feature-desc">Temui NPC unik di setiap area yang memberikan soal STEM & Literasi</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⏱️</span>
+      <div class="feature-name">TIMER 15 DETIK</div>
+      <div class="feature-desc">Setiap soal punya batas waktu. Jawab cepat dan tepat untuk skor maksimal!</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">❤️</span>
+      <div class="feature-name">SISTEM NYAWA</div>
+      <div class="feature-desc">3 nyawa per sesi. Salah jawab = nyawa berkurang. Hati-hati!</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏆</span>
+      <div class="feature-name">PENCAPAIAN</div>
+      <div class="feature-desc">Kumpulkan achievement dan buktikan kamu adalah Brain Master sejati</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💾</span>
+      <div class="feature-name">SIMPAN PROGRES</div>
+      <div class="feature-desc">Progres tersimpan otomatis. Lanjutkan petualangan kapan saja</div>
+    </div>
+  </div>
+</section>
+
+<div class="pixel-divider"></div>
+
+<!-- LEVELS -->
+<section id="levels">
+  <h2 class="section-title">— DUNIA PETUALANGAN —</h2>
+  <div class="levels-row">
+    <div class="level-card" style="--border-color:#A8E6CF;--glow:rgba(168,230,207,0.3)">
+      <div class="lv-num">LEVEL 1</div>
+      <span class="lv-icon">🌲</span>
+      <div class="lv-name">Hutan Angka</div>
+      <span class="lv-badge">MATH</span>
+    </div>
+    <div class="level-card" style="--border-color:#7EC8E3;--glow:rgba(126,200,227,0.3)">
+      <div class="lv-num">LEVEL 2</div>
+      <span class="lv-icon">🦇</span>
+      <div class="lv-name">Gua Sains</div>
+      <span class="lv-badge">SAINS</span>
+    </div>
+    <div class="level-card" style="--border-color:#FFD166;--glow:rgba(255,209,102,0.3)">
+      <div class="lv-num">LEVEL 3</div>
+      <span class="lv-icon">📚</span>
+      <div class="lv-name">Menara Kata</div>
+      <span class="lv-badge">LITERASI</span>
+    </div>
+    <div class="level-card locked" style="--border-color:#FF6B9D">
+      <div class="lv-num">LEVEL 4</div>
+      <span class="lv-icon">⚡</span>
+      <div class="lv-name">Labirin Logika</div>
+      <span class="lv-badge">LOGIKA</span>
+    </div>
+  </div>
+</section>
+
+<div class="pixel-divider"></div>
+
+<!-- HOW TO PLAY -->
+<section id="howto">
+  <h2 class="section-title">— CARA BERMAIN —</h2>
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">01</span>
+      <div class="step-text">Pilih karaktermu dan masuk ke level yang tersedia</div>
+    </div>
+    <div class="step">
+      <span class="step-num">02</span>
+      <div class="step-text">Gerakkan karakter ke kiri/kanan sera bisa melawan musuh yang bergerak</div>
+    </div>
+    <div class="step">
+      <span class="step-num">03</span>
+      <div class="step-text">Dekati NPC — dialog soal muncul otomatis</div>
+    </div>
+    <div class="step">
+      <span class="step-num">04</span>
+      <div class="step-text">Jawab soal dalam 30 detik — benar +10, salah -5 skor</div>
+    </div>
+    <div class="step">
+      <span class="step-num">05</span>
+      <div class="step-text">Selesaikan semua NPC di level → lanjut ke level berikutnya!</div>
+    </div>
+  </div>
+</section>
+
+<div class="pixel-divider"></div>
+
+<!-- DOWNLOAD CTA -->
+<section id="download">
+  <h2 class="cta-title">⬇ UNDUH SEKARANG ⬇</h2>
+  <p class="cta-sub">Gratis • Ringan • Edukatif</p>
+
+  <div class="platform-cards">
+    <div class="platform-card">
+      <span class="pc-icon">📱</span>
+      <div class="pc-name">ANDROID</div>
+      <div class="pc-size">~40 MB · .apk</div>
+    </div>
+  </div>
+
+  <div>
+    <!-- 
+      CARA PASANG LINK UNDUHAN:
+      Ganti href="#" dengan:
+      - Google Drive: https://drive.google.com/uc?export=download&id=FILE_ID
+      - GitHub Release: https://github.com/USERNAME/REPO/releases/download/v1.0/game.zip
+      - itch.io: https://USERNAME.itch.io/brain-adventure
+    -->
+    <!-- <a href="#" class="big-dl" id="btn-windows" onclick="showModal('windows')">
+      🖥️ UNDUH WINDOWS
+    </a> -->
+    <a href="#" class="big-dl" id="btn-android" onclick="showModal('android')">
+      📱 UNDUH ANDROID
+    </a>
+  </div>
+  <br>
+  <!-- <a href="https://itch.io" target="_blank" class="big-dl alt">
+    🎮 MAIN DI ITCH.IO
+  </a> -->
+
+  <p class="note">
+    * File game di-host di Google Drive / GitHub Releases<br>
+    Klik tombol → redirect ke halaman unduhan
+  </p>
+</section>
+
+<!-- MODAL -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
+  <div style="background:#0d1b2a;border:3px solid var(--cyan);padding:40px;text-align:center;max-width:400px;width:90%;position:relative">
+    <button onclick="closeModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:white;font-size:20px;cursor:none">✕</button>
+    <div id="modal-icon" style="font-size:48px;margin-bottom:16px"></div>
+    <div id="modal-title" style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--yellow);margin-bottom:12px"></div>
+    <div id="modal-desc" style="font-family:'VT323',monospace;font-size:19px;color:rgba(255,255,255,0.7);margin-bottom:28px;line-height:1.6"></div>
+    <a id="modal-btn" href="#" target="_blank"
+      style="display:inline-block;font-family:'Press Start 2P',monospace;font-size:9px;background:var(--cyan);color:var(--navy);padding:12px 24px;text-decoration:none;box-shadow:4px 4px 0 #1a5276">
+      ⬇ MULAI UNDUH
+    </a>
+    <p style="font-family:'VT323',monospace;font-size:15px;color:rgba(255,255,255,0.3);margin-top:16px">
+      Kamu akan diarahkan ke halaman unduhan
+    </p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🧠 BRAIN ADVENTURE</div>
+  <div class="footer-copy">© 2025 UMKO <br>
+    <span style="font-size:15px; color:var(--yellow); font-family:'VT323',monospace;">Dibuat oleh mahasiswa Universitas Muhammadiyah Kotabumi FTIK</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="/assets/umko.png" alt="Logo UMKO" style="height:38px;vertical-align:middle; background:white; border-radius:8px; padding:2px; border:1px solid #FFD166; box-shadow:0 2px 8px #0d1b2a22; margin-right:8px;">
+  </div>
+  <div class="footer-links">
+    <a href="#">GitHub</a>
+    <a href="#">itch.io</a>
+    <a href="#">Kontak</a>
+  </div>
+</footer>
+
+<script>
+  // ── CURSOR ──
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.style.transform = 'scale(2)');
+    el.addEventListener('mouseleave', () => cursor.style.transform = 'scale(1)');
+  });
+
+  // ── STARS ──
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --dur:${1.2 + Math.random()*2.5}s;
+      --delay:${Math.random()*3}s;
+      opacity:${0.1 + Math.random()*0.6};
+    `;
+    starsEl.appendChild(s);
+  }
+
+  // ── SCROLL REVEAL ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feature-card, .level-card, .step, .platform-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    observer.observe(el);
+  });
+
+  // ── DOWNLOAD MODAL ──
+  const downloads = {
+    windows: {
+      icon: '🖥️',
+      title: 'UNDUH WINDOWS',
+      desc: 'Brain Adventure v1.0.0\nFormat: .zip (executable)\nUkuran: ~50 MB\nRequirement: Windows 10/11 64-bit',
+      // Ganti link ini dengan Google Drive atau GitHub Release kamu
+      url: 'https://drive.google.com/file/d/YOUR_FILE_ID/view'
+    },
+    android: {
+      icon: '📱',
+      title: 'UNDUH ANDROID',
+      desc: 'Brain Adventure v1.0.0\nFormat: .apk\nUkuran: ~40 MB\nRequirement: Android 6.0+',
+      // Ganti link ini dengan Google Drive atau GitHub Release kamu
+      url: 'https://drive.google.com/file/d/YOUR_FILE_ID/view'
+    }
+  };
+
+  function showModal(type) {
+    event.preventDefault();
+    const d = downloads[type];
+    document.getElementById('modal-icon').textContent = d.icon;
+    document.getElementById('modal-title').textContent = d.title;
+    document.getElementById('modal-desc').textContent = d.desc;
+    document.getElementById('modal-btn').href = d.url;
+    const modal = document.getElementById('modal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── PIXEL CHAR PARALLAX ──
+  document.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    document.querySelectorAll('.deco-char').forEach((el, i) => {
+      el.style.transform = `translateY(${y * (0.05 + i * 0.02) * -1}px)`;
+    });
+  });
+</script>
+</body>
+</html>
