@@ -1,0 +1,4 @@
+// Tempatkan file APK game Anda di folder assets, misal: assets/game.apk
+// Setelah file di-upload, gunakan link berikut untuk direct download:
+// <a href="assets/game.apk" download>Unduh APK</a>
+// Atau update script di index.html agar tombol unduh langsung mengunduh file APK.
